@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PartyMaker — итоговый фильм</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container stack" style="margin-top:2rem">
+    <section class="panel">
+      <h1>Итоговый выбор комнаты</h1>
+      <div id="content" class="result-empty">Загрузка...</div>
+    </section>
+  </main>
+  <script>
+    const code = new URLSearchParams(location.search).get('room');
+    const content = document.querySelector('#content');
+    async function load() {
+      if (!code) { content.textContent = 'Код комнаты не передан.'; return; }
+      const res = await fetch(`/api/rooms/${code}`);
+      const data = await res.json();
+      if (!res.ok) { content.textContent = data.error || 'Ошибка'; return; }
+      if (!data.winner) { content.textContent = 'Финальный фильм ещё не выбран.'; return; }
+      const w = data.winner;
+      content.className = 'result-win';
+      content.innerHTML = `<div class="movie-head"><img class="poster" src="${w.poster}" alt="${w.title}"/><div><h2>${w.title} (${w.year})</h2><p>${w.overview}</p><p class="hint">Жанры: ${(w.genres||[]).join(', ')} • Рейтинг: ${w.rating}</p></div></div>`;
+    }
+    load();
+  </script>
+</body>
+</html>
