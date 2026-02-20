@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PartyMaker Platform Integration</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container stack" style="margin-top:2rem">
+    <section class="panel">
+      <h1>Практика №6: интеграционная веб-платформа</h1>
+      <p class="hint">Интеграция собственного API QR + API одногруппника (или mock fallback).</p>
+      <div class="grid grid--3">
+        <label>Название фильма<input id="title" type="text" placeholder="Интерстеллар" /></label>
+        <label>Год (опц.)<input id="date" type="text" placeholder="2014" /></label>
+        <label>Ссылка на фильм<input id="movieLink" type="url" placeholder="https://www.themoviedb.org/movie/..." /></label>
+      </div>
+      <label style="margin-top:.7rem;display:block;">URL API одногруппника (POST). Оставь пустым для локального mock.
+        <input id="classmateUrl" type="url" placeholder="https://<name>.amvera.io/api/recommend" />
+      </label>
+      <button id="integrateBtn" class="btn btn--primary" style="margin-top:.8rem;">Запустить интеграцию</button>
+    </section>
+
+    <section class="panel">
+      <h2>Результаты интеграции</h2>
+      <pre id="resultBox" class="code-box">Ожидание запроса...</pre>
+    </section>
+  </main>
+  <script src="platform.js"></script>
+</body>
+</html>

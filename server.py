@@ -6,7 +6,7 @@ import string
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, urlencode, quote
 from urllib.request import Request, urlopen
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 TMDB_BASE = 'https://api.themoviedb.org/3'
 IMAGE_BASE = 'https://image.tmdb.org/t/p/w342'
@@ -191,6 +191,16 @@ def build_qr_url(payload):
     return f"https://api.qrserver.com/v1/create-qr-code/?size=256x256&data={quote(json.dumps(payload, ensure_ascii=False))}"
 
 
+def post_json(url, payload, timeout=15):
+    req = Request(
+        url,
+        data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
+        method='POST',
+    )
+    with urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode('utf-8'))
+
 class Handler(SimpleHTTPRequestHandler):
     def _json(self, code, payload):
         body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
@@ -267,6 +277,55 @@ class Handler(SimpleHTTPRequestHandler):
                     return self._json(400, {'error': 'Поля title и movie_link обязательны'})
                 payload = {'title': title, 'date': date, 'movie_link': movie_link}
                 return self._json(200, {**payload, 'qr_url': build_qr_url(payload)})
+
+
+            if p == '/api/mock/classmate/recommend':
+                data = self._body()
+                title = (data.get('title') or 'Unknown').strip()
+                return self._json(200, {
+                    'service': 'mock-classmate-api',
+                    'message': 'Рекомендация получена',
+                    'next_step': f'Проверь трейлер и сеанс для «{title}»',
+                    'confidence': 0.81,
+                })
+
+            if p == '/api/platform/integrate':
+                data = self._body()
+                title = (data.get('title') or '').strip()
+                date = (data.get('date') or '').strip()
+                movie_link = (data.get('movie_link') or '').strip()
+                classmate_url = (data.get('classmate_api_url') or '').strip()
+
+                if not title or not movie_link:
+                    return self._json(400, {'error': 'Поля title и movie_link обязательны'})
+
+                qr_payload = {'title': title, 'date': date, 'movie_link': movie_link}
+                own_api_result = {**qr_payload, 'qr_url': build_qr_url(qr_payload)}
+
+                classmate_payload = {
+                    'title': title,
+                    'date': date,
+                    'movie_link': movie_link,
+                    'qr_url': own_api_result['qr_url'],
+                }
+
+                if not classmate_url:
+                    classmate_url = 'http://127.0.0.1:4173/api/mock/classmate/recommend'
+
+                try:
+                    classmate_result = post_json(classmate_url, classmate_payload)
+                    classmate_error = None
+                except (HTTPError, URLError, TimeoutError, ValueError) as e:
+                    classmate_result = None
+                    classmate_error = f'Classmate API недоступен: {e}'
+
+                return self._json(200, {
+                    'integration_status': 'ok' if not classmate_error else 'partial',
+                    'own_api': own_api_result,
+                    'classmate_api_url': classmate_url,
+                    'classmate_api_result': classmate_result,
+                    'classmate_api_error': classmate_error,
+                })
 
             if p == '/api/rooms':
                 data = self._body()

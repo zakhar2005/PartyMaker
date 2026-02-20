@@ -172,3 +172,5 @@ a { color: #9cb5ff; }
   background: white;
   padding: .35rem;
 }
+
+.code-box { background:#0d1027; border:1px solid #3b447d; border-radius:10px; padding:1rem; overflow:auto; white-space:pre-wrap; }
