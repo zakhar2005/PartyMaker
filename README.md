@@ -69,23 +69,22 @@ python3 server.py
 - Текстовое описание сервиса: `reports/service_description.md`
 - Отчет по практике №5: `reports/practice_work_5.md`
 
+
 ## Практика №6: интеграционная веб-платформа
 - UI интеграции: `http://localhost:4173/platform.html`
 - Endpoint интеграции: `POST /api/platform/integrate`
-- Mock API одногруппника (для локальной проверки): `POST /api/mock/classmate/recommend`
 
 ### Формат запроса `/api/platform/integrate`
 ```json
 {
   "title": "Интерстеллар",
-  "date": "2014",
-  "movie_link": "https://www.themoviedb.org/movie/157336-interstellar",
-  "classmate_api_url": "https://<classmate>.amvera.io/api/..."
+  "tmdb_id": 157336
 }
 ```
+`title` или `tmdb_id` обязателен (можно передать один из них).
 
 ### Что делает бизнес-логика
-1. Платформа вызывает собственное QR API (внутренне) и получает `qr_url`.
-2. Добавляет `qr_url` к данным фильма.
-3. Отправляет объединенные данные в API одногруппника (или локальный mock).
-4. Возвращает объединенный результат, включая ошибки интеграции.
+1. Платформа запрашивает фильм из TMDB API (по `tmdb_id` или через поиск по `title`).
+2. Из полученных данных формируется `movie_link` на страницу TMDB.
+3. Собственное QR API генерирует `qr_url` для итогового фильма.
+4. Пользователь получает объединенный JSON-результат: данные TMDB + QR.

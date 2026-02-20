@@ -3,9 +3,7 @@ const resultBox = document.querySelector('#resultBox');
 document.querySelector('#integrateBtn').addEventListener('click', async () => {
   const payload = {
     title: document.querySelector('#title').value.trim(),
-    date: document.querySelector('#date').value.trim(),
-    movie_link: document.querySelector('#movieLink').value.trim(),
-    classmate_api_url: document.querySelector('#classmateUrl').value.trim(),
+    tmdb_id: document.querySelector('#tmdbId').value ? Number(document.querySelector('#tmdbId').value) : null,
   };
 
   try {

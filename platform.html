@@ -9,16 +9,16 @@
 <body>
   <main class="container stack" style="margin-top:2rem">
     <section class="panel">
-      <h1>Практика №6: интеграционная веб-платформа</h1>
-      <p class="hint">Интеграция собственного API QR + API одногруппника (или mock fallback).</p>
+      <h1>Практика №6: QR API + TMDB API</h1>
+      <p class="hint">Платформа берёт данные фильма из TMDB и формирует QR через ваше API.</p>
       <div class="grid grid--3">
-        <label>Название фильма<input id="title" type="text" placeholder="Интерстеллар" /></label>
-        <label>Год (опц.)<input id="date" type="text" placeholder="2014" /></label>
-        <label>Ссылка на фильм<input id="movieLink" type="url" placeholder="https://www.themoviedb.org/movie/..." /></label>
+        <label>Название фильма (или оставьте пустым, если есть ID)
+          <input id="title" type="text" placeholder="Интерстеллар" />
+        </label>
+        <label>TMDB ID (опционально)
+          <input id="tmdbId" type="number" placeholder="157336" />
+        </label>
       </div>
-      <label style="margin-top:.7rem;display:block;">URL API одногруппника (POST). Оставь пустым для локального mock.
-        <input id="classmateUrl" type="url" placeholder="https://<name>.amvera.io/api/recommend" />
-      </label>
       <button id="integrateBtn" class="btn btn--primary" style="margin-top:.8rem;">Запустить интеграцию</button>
     </section>
 
