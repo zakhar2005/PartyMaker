@@ -8,8 +8,29 @@ from urllib.parse import urlparse, urlencode
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
-TMDB_API_KEY = os.getenv('TMDB_API_KEY')
-TMDB_ACCESS_TOKEN = os.getenv('TMDB_ACCESS_TOKEN')
+
+DEFAULT_TMDB_API_KEY = "f99ba0acfd87b20a7c0c79ff2ae335cb"
+DEFAULT_TMDB_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmOTliYTBhY2ZkODdiMjBhN2MwYzc5ZmYyYWUzMzVjYiIsIm5iZiI6MTc3MTU0OTAxMy41MzYsInN1YiI6IjY5OTdiMTU1M2MwZWM5NmZjOGJhMzY5YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ._OsB51wAMIq4s32IOHE4RaItz0MF9AP2GyUDCEA4cOU"
+
+
+def _load_dotenv(path='.env'):
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                key, val = line.split('=', 1)
+                key = key.strip()
+                val = val.strip().strip('"').strip("'")
+                os.environ.setdefault(key, val)
+    except FileNotFoundError:
+        pass
+
+
+_load_dotenv()
+TMDB_API_KEY = os.getenv('TMDB_API_KEY') or DEFAULT_TMDB_API_KEY
+TMDB_ACCESS_TOKEN = os.getenv('TMDB_ACCESS_TOKEN') or DEFAULT_TMDB_ACCESS_TOKEN
 TMDB_BASE = 'https://api.themoviedb.org/3'
 IMAGE_BASE = 'https://image.tmdb.org/t/p/w342'
 ROOMS = {}

@@ -3,24 +3,27 @@
 MVP сервиса совместного выбора фильма с реальным TMDB API.
 
 ## Что исправлено
+- Ошибка `TMDB_API_KEY or TMDB_ACCESS_TOKEN is not set` устранена: сервер теперь использует ключи по умолчанию (из вашего сообщения), а также поддерживает `TMDB_API_KEY` / `TMDB_ACCESS_TOKEN` из переменных окружения.
 - Подключение по QR/коду ведёт в существующее лобби.
 - Гость может открыть новый сайт, ввести **код комнаты + ник** и подключиться к текущей комнате.
 - Фильмы и жанры берутся из реального TMDB API (`top_rated`, `genre/list`, `discover`).
 - Постеры берутся из TMDB CDN и отображаются в карточках.
 - Финальный QR ведёт на `final.html?room=...`, где открывается итоговый фильм.
 
-## Требования
-- Python 3.10+
-- TMDB API key (v3) **или** TMDB Access Token (Bearer)
-
 ## Запуск
 ```bash
 cd PartyMaker
-export TMDB_API_KEY=ваш_tmdb_api_key
-# либо export TMDB_ACCESS_TOKEN=ваш_tmdb_bearer_token
 python3 server.py
 ```
 Открыть: `http://localhost:4173`
+
+## Опционально: переопределить ключи
+```bash
+export TMDB_API_KEY=ваш_tmdb_api_key
+# или
+export TMDB_ACCESS_TOKEN=ваш_tmdb_bearer_token
+python3 server.py
+```
 
 ## Проверка сценария
 1. На ПК: введите имя хоста, нажмите «Создать комнату».
@@ -33,11 +36,3 @@ python3 server.py
 6. Хост нажимает «Обработать раунд».
 7. После единогласного лайка появляется итог и финальный QR.
 8. Финальный QR открывает страницу итогового фильма (`final.html`).
-
-## API (локально)
-- `POST /api/rooms` — создать комнату
-- `POST /api/rooms/{code}/join` — присоединиться
-- `GET /api/rooms/{code}` — состояние комнаты
-- `POST /api/rooms/{code}/start` — старт голосования
-- `POST /api/rooms/{code}/vote` — голос
-- `POST /api/rooms/{code}/process` — обработка раунда
