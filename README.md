@@ -2,13 +2,44 @@
 
 MVP сервиса совместного выбора фильма с реальным TMDB API.
 
-## Что исправлено
-- Ошибка `TMDB_API_KEY or TMDB_ACCESS_TOKEN is not set` устранена: сервер теперь использует ключи по умолчанию (из вашего сообщения), а также поддерживает `TMDB_API_KEY` / `TMDB_ACCESS_TOKEN` из переменных окружения.
-- Подключение по QR/коду ведёт в существующее лобби.
-- Гость может открыть новый сайт, ввести **код комнаты + ник** и подключиться к текущей комнате.
-- Фильмы и жанры берутся из реального TMDB API (`top_rated`, `genre/list`, `discover`).
-- Постеры берутся из TMDB CDN и отображаются в карточках.
-- Финальный QR ведёт на `final.html?room=...`, где открывается итоговый фильм.
+## Настройка ключа TMDB
+Сервер ищет ключи в таком порядке:
+1. Переменные окружения `TMDB_API_KEY` / `TMDB_ACCESS_TOKEN`
+2. Файл `.env` в корне проекта
+
+Если ключи не найдены, API вернёт понятную ошибку с подсказкой для bash/PowerShell.
+
+### Linux/macOS (bash/zsh)
+```bash
+export TMDB_API_KEY=your_tmdb_key
+python3 server.py
+```
+
+### Windows PowerShell
+```powershell
+$env:TMDB_API_KEY = "your_tmdb_key"
+python server.py
+```
+
+### Через `.env` (кроссплатформенно)
+Создай файл `.env` рядом с `server.py`:
+```env
+TMDB_API_KEY=your_tmdb_key
+# или
+# TMDB_ACCESS_TOKEN=your_tmdb_bearer_token
+```
+
+Потом запускай:
+```bash
+python3 server.py
+```
+
+## Быстрая проверка конфигурации
+После запуска:
+```bash
+curl http://localhost:4173/api/config-check
+```
+Ожидаемо: `tmdb_api_key_set: true` или `tmdb_access_token_set: true`.
 
 ## Запуск
 ```bash
@@ -16,14 +47,6 @@ cd PartyMaker
 python3 server.py
 ```
 Открыть: `http://localhost:4173`
-
-## Опционально: переопределить ключи
-```bash
-export TMDB_API_KEY=ваш_tmdb_api_key
-# или
-export TMDB_ACCESS_TOKEN=ваш_tmdb_bearer_token
-python3 server.py
-```
 
 ## Проверка сценария
 1. На ПК: введите имя хоста, нажмите «Создать комнату».

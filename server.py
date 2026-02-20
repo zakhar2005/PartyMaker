@@ -5,12 +5,12 @@ import random
 import string
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, urlencode
-from urllib.request import urlopen, Request
+from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
-
-DEFAULT_TMDB_API_KEY = "f99ba0acfd87b20a7c0c79ff2ae335cb"
-DEFAULT_TMDB_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmOTliYTBhY2ZkODdiMjBhN2MwYzc5ZmYyYWUzMzVjYiIsIm5iZiI6MTc3MTU0OTAxMy41MzYsInN1YiI6IjY5OTdiMTU1M2MwZWM5NmZjOGJhMzY5YyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ._OsB51wAMIq4s32IOHE4RaItz0MF9AP2GyUDCEA4cOU"
+TMDB_BASE = 'https://api.themoviedb.org/3'
+IMAGE_BASE = 'https://image.tmdb.org/t/p/w342'
+ROOMS = {}
 
 
 def _load_dotenv(path='.env'):
@@ -21,19 +21,14 @@ def _load_dotenv(path='.env'):
                 if not line or line.startswith('#') or '=' not in line:
                     continue
                 key, val = line.split('=', 1)
-                key = key.strip()
-                val = val.strip().strip('"').strip("'")
-                os.environ.setdefault(key, val)
+                os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
     except FileNotFoundError:
         pass
 
 
-_load_dotenv()
-TMDB_API_KEY = os.getenv('TMDB_API_KEY') or DEFAULT_TMDB_API_KEY
-TMDB_ACCESS_TOKEN = os.getenv('TMDB_ACCESS_TOKEN') or DEFAULT_TMDB_ACCESS_TOKEN
-TMDB_BASE = 'https://api.themoviedb.org/3'
-IMAGE_BASE = 'https://image.tmdb.org/t/p/w342'
-ROOMS = {}
+def get_tmdb_credentials():
+    _load_dotenv()
+    return os.getenv('TMDB_API_KEY'), os.getenv('TMDB_ACCESS_TOKEN')
 
 
 def room_code():
@@ -41,16 +36,21 @@ def room_code():
 
 
 def tmdb_get(path, params=None):
-    if not TMDB_API_KEY and not TMDB_ACCESS_TOKEN:
-        raise RuntimeError('TMDB_API_KEY or TMDB_ACCESS_TOKEN is not set')
+    api_key, access_token = get_tmdb_credentials()
+    if not api_key and not access_token:
+        raise RuntimeError(
+            'TMDB_API_KEY or TMDB_ACCESS_TOKEN is not set. '
+            'Set env var (bash: export TMDB_API_KEY=..., PowerShell: $env:TMDB_API_KEY="...") '
+            'or create .env with TMDB_API_KEY=...'
+        )
 
     params = params or {}
     headers = {'Accept': 'application/json'}
 
-    if TMDB_ACCESS_TOKEN:
-        headers['Authorization'] = f'Bearer {TMDB_ACCESS_TOKEN}'
+    if access_token:
+        headers['Authorization'] = f'Bearer {access_token}'
     else:
-        params['api_key'] = TMDB_API_KEY
+        params['api_key'] = api_key
 
     query = urlencode(params)
     url = f"{TMDB_BASE}{path}?{query}" if query else f"{TMDB_BASE}{path}"
@@ -137,12 +137,19 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         p = urlparse(self.path).path
+        if p == '/api/config-check':
+            key, token = get_tmdb_credentials()
+            return self._json(200, {
+                'tmdb_api_key_set': bool(key),
+                'tmdb_access_token_set': bool(token),
+            })
+
         if p.startswith('/api/rooms/'):
             code = p.split('/')[3] if len(p.split('/')) > 3 else None
             room = ROOMS.get(code)
             if not room:
                 return self._json(404, {'error': 'Комната не найдена'})
-            public = {
+            return self._json(200, {
                 'code': code,
                 'participants': room['participants'],
                 'round': room['round'],
@@ -150,8 +157,7 @@ class Handler(SimpleHTTPRequestHandler):
                 'votes': room['votes'],
                 'top_genres': room['top_genres'],
                 'winner': room['winner'],
-            }
-            return self._json(200, public)
+            })
         return super().do_GET()
 
     def do_POST(self):
