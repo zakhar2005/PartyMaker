@@ -4,13 +4,78 @@ import os
 import random
 import string
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
-from urllib.parse import urlparse, urlencode
+from urllib.parse import urlparse, urlencode, quote
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 TMDB_BASE = 'https://api.themoviedb.org/3'
 IMAGE_BASE = 'https://image.tmdb.org/t/p/w342'
 ROOMS = {}
+
+
+OPENAPI_SPEC = {
+    'openapi': '3.0.3',
+    'info': {
+        'title': 'PartyMaker QR API',
+        'version': '1.0.0',
+        'description': 'API генерации QR-кода для итогового выбранного фильма.',
+    },
+    'servers': [{'url': 'http://localhost:4173'}],
+    'paths': {
+        '/api/qr/generate': {
+            'post': {
+                'summary': 'Сгенерировать QR-код для фильма',
+                'description': 'Принимает информацию о фильме и возвращает ссылку на QR-код.',
+                'requestBody': {
+                    'required': True,
+                    'content': {
+                        'application/json': {
+                            'schema': {
+                                'type': 'object',
+                                'required': ['title', 'movie_link'],
+                                'properties': {
+                                    'title': {'type': 'string', 'example': 'Дюна: Часть вторая'},
+                                    'date': {'type': 'string', 'example': '2024'},
+                                    'movie_link': {'type': 'string', 'format': 'uri', 'example': 'https://www.themoviedb.org/movie/693134-dune-part-two'},
+                                },
+                            }
+                        }
+                    },
+                },
+                'responses': {
+                    '200': {
+                        'description': 'QR-код успешно сгенерирован',
+                        'content': {
+                            'application/json': {
+                                'schema': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'title': {'type': 'string'},
+                                        'date': {'type': 'string'},
+                                        'movie_link': {'type': 'string'},
+                                        'qr_url': {'type': 'string', 'format': 'uri'},
+                                    },
+                                }
+                            }
+                        },
+                    },
+                    '400': {'description': 'Ошибка валидации входных данных'},
+                },
+            }
+        },
+        '/api/config-check': {
+            'get': {
+                'summary': 'Проверить видимость TMDB-ключей',
+                'responses': {
+                    '200': {
+                        'description': 'Статус конфигурации',
+                        'content': {'application/json': {'schema': {'type': 'object'}}},
+                    }
+                },
+            }
+        },
+    },
+}
 
 
 def _load_dotenv(path='.env'):
@@ -122,11 +187,23 @@ def build_batch(room, round_no):
     return batch
 
 
+def build_qr_url(payload):
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=256x256&data={quote(json.dumps(payload, ensure_ascii=False))}"
+
+
 class Handler(SimpleHTTPRequestHandler):
     def _json(self, code, payload):
         body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
         self.send_response(code)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _html(self, code, html):
+        body = html.encode('utf-8')
+        self.send_response(code)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -137,6 +214,24 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         p = urlparse(self.path).path
+
+        if p == '/openapi.json':
+            return self._json(200, OPENAPI_SPEC)
+
+        if p == '/docs':
+            return self._html(200, """
+<!doctype html><html><head>
+  <meta charset='utf-8'><title>PartyMaker Swagger</title>
+  <link rel='stylesheet' href='https://unpkg.com/swagger-ui-dist@5/swagger-ui.css'>
+</head><body>
+  <div id='swagger-ui'></div>
+  <script src='https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js'></script>
+  <script>
+    window.ui = SwaggerUIBundle({ url: '/openapi.json', dom_id: '#swagger-ui' });
+  </script>
+</body></html>
+            """)
+
         if p == '/api/config-check':
             key, token = get_tmdb_credentials()
             return self._json(200, {
@@ -163,6 +258,16 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         p = urlparse(self.path).path
         try:
+            if p == '/api/qr/generate':
+                data = self._body()
+                title = (data.get('title') or '').strip()
+                date = (data.get('date') or '').strip()
+                movie_link = (data.get('movie_link') or '').strip()
+                if not title or not movie_link:
+                    return self._json(400, {'error': 'Поля title и movie_link обязательны'})
+                payload = {'title': title, 'date': date, 'movie_link': movie_link}
+                return self._json(200, {**payload, 'qr_url': build_qr_url(payload)})
+
             if p == '/api/rooms':
                 data = self._body()
                 host = (data.get('hostName') or '').strip()

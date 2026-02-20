@@ -59,3 +59,12 @@ python3 server.py
 6. Хост нажимает «Обработать раунд».
 7. После единогласного лайка появляется итог и финальный QR.
 8. Финальный QR открывает страницу итогового фильма (`final.html`).
+
+## Swagger / OpenAPI
+- OpenAPI JSON: `http://localhost:4173/openapi.json`
+- Swagger UI: `http://localhost:4173/docs`
+- Основной endpoint для практики №5: `POST /api/qr/generate`
+
+## Документация по практике №5
+- Текстовое описание сервиса: `reports/service_description.md`
+- Отчет по практике №5: `reports/practice_work_5.md`
