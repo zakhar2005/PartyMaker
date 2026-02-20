@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PartyMaker — выбор фильма с друзьями</title>
+    <title>PartyMaker — выбор фильма для компании</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -11,75 +11,62 @@
       <div class="container hero__content">
         <div>
           <p class="badge">🎬 PartyMaker</p>
-          <h1>Выберите фильм для компании без споров</h1>
+          <h1>Комнатный подбор фильма до полного согласия</h1>
           <p class="subtitle">
-            Создайте комнату, соберите предпочтения друзей и получите общий список
-            рекомендаций. Когда договорились — сгенерируйте QR с итогом.
+            Хост создаёт комнату, гости присоединяются, получают фильмы из топа,
+            ставят лайки/дизлайки. После первого раунда алгоритм считает 3 самых
+            популярных жанра и предлагает новые фильмы, пока все не лайкнут один и тот же фильм.
           </p>
-          <a href="#room" class="btn btn--primary">Начать подбор</a>
         </div>
         <div class="hero__card">
-          <h3>Как это работает</h3>
+          <h3>Алгоритм</h3>
           <ol>
-            <li>Создайте комнату и поделитесь кодом.</li>
-            <li>Каждый добавляет 1-3 любимых фильма.</li>
-            <li>Проголосуйте за рекомендации.</li>
-            <li>Заберите QR-код с финальным выбором.</li>
+            <li>Раунд 1: показываем первые 3 фильма.</li>
+            <li>Собираем лайки/дизлайки по всем участникам.</li>
+            <li>Считаем топ-3 жанра по реакции группы.</li>
+            <li>Даём следующие фильмы по этим жанрам до единогласного лайка.</li>
           </ol>
         </div>
       </div>
     </header>
 
     <main class="container stack">
-      <section id="room" class="panel">
-        <h2>1. Комната</h2>
-        <div class="grid grid--2">
-          <label>
-            Имя организатора
-            <input id="hostName" type="text" placeholder="Например, Злата" />
-          </label>
-          <button id="createRoomBtn" class="btn">Создать комнату</button>
-        </div>
-        <p id="roomResult" class="hint"></p>
-      </section>
-
       <section class="panel">
-        <h2>2. Предпочтения участников</h2>
+        <h2>1. Комната</h2>
         <div class="grid grid--3">
           <label>
-            Фильм #1
-            <input id="fav1" type="text" placeholder="Интерстеллар" />
+            Имя хоста
+            <input id="hostName" type="text" placeholder="Злата" />
           </label>
-          <label>
-            Фильм #2
-            <input id="fav2" type="text" placeholder="Одержимость" />
-          </label>
-          <label>
-            Фильм #3
-            <input id="fav3" type="text" placeholder="Начало" />
-          </label>
+          <button id="createRoomBtn" class="btn">Создать комнату</button>
+          <div id="roomInfo" class="hint"></div>
         </div>
-        <button id="recommendBtn" class="btn">Получить рекомендации</button>
-        <div id="recommendations" class="cards"></div>
+
+        <div class="join-row">
+          <label>
+            Имя гостя
+            <input id="guestName" type="text" placeholder="Артём" />
+          </label>
+          <button id="joinBtn" class="btn">Присоединиться</button>
+        </div>
+
+        <div>
+          <h3>Участники</h3>
+          <ul id="participants" class="participants"></ul>
+        </div>
       </section>
 
       <section class="panel">
-        <h2>3. Финальный выбор + QR</h2>
-        <div class="grid grid--2">
-          <label>
-            Название фильма
-            <input id="title" type="text" placeholder="Дюна: Часть вторая" />
-          </label>
-          <label>
-            Год (необязательно)
-            <input id="date" type="text" placeholder="2024" />
-          </label>
-        </div>
-        <label>
-          Ссылка на фильм / трейлер
-          <input id="movieLink" type="url" placeholder="https://www.themoviedb.org/..." />
-        </label>
-        <button id="qrBtn" class="btn btn--primary">Сгенерировать QR</button>
+        <h2>2. Голосование по фильмам</h2>
+        <p id="roundInfo" class="hint">Создайте комнату и добавьте участников, затем начните голосование.</p>
+        <button id="startVotingBtn" class="btn btn--primary">Начать голосование</button>
+        <div id="moviesBoard" class="cards"></div>
+        <button id="nextRoundBtn" class="btn hidden">Обработать раунд</button>
+      </section>
+
+      <section class="panel">
+        <h2>3. Финал и QR</h2>
+        <div id="finalResult" class="result-empty">Пока финальный фильм не выбран.</div>
         <div id="qrResult" class="qr"></div>
       </section>
     </main>
