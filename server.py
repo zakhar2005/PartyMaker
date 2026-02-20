@@ -4,11 +4,12 @@ import os
 import random
 import string
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
 TMDB_API_KEY = os.getenv('TMDB_API_KEY')
+TMDB_ACCESS_TOKEN = os.getenv('TMDB_ACCESS_TOKEN')
 TMDB_BASE = 'https://api.themoviedb.org/3'
 IMAGE_BASE = 'https://image.tmdb.org/t/p/w342'
 ROOMS = {}
@@ -19,14 +20,21 @@ def room_code():
 
 
 def tmdb_get(path, params=None):
-    if not TMDB_API_KEY:
-        raise RuntimeError('TMDB_API_KEY is not set')
+    if not TMDB_API_KEY and not TMDB_ACCESS_TOKEN:
+        raise RuntimeError('TMDB_API_KEY or TMDB_ACCESS_TOKEN is not set')
+
     params = params or {}
-    params['api_key'] = TMDB_API_KEY
-    query = '&'.join(f"{k}={str(v)}" for k, v in params.items())
-    url = f"{TMDB_BASE}{path}?{query}"
-    req = Request(url, headers={'Accept': 'application/json'})
-    with urlopen(req, timeout=10) as r:
+    headers = {'Accept': 'application/json'}
+
+    if TMDB_ACCESS_TOKEN:
+        headers['Authorization'] = f'Bearer {TMDB_ACCESS_TOKEN}'
+    else:
+        params['api_key'] = TMDB_API_KEY
+
+    query = urlencode(params)
+    url = f"{TMDB_BASE}{path}?{query}" if query else f"{TMDB_BASE}{path}"
+    req = Request(url, headers=headers)
+    with urlopen(req, timeout=15) as r:
         return json.loads(r.read().decode('utf-8'))
 
 
@@ -41,10 +49,12 @@ def fetch_genres():
 
 
 def fetch_by_genres(genre_ids, page=1):
+    if not genre_ids:
+        return []
     data = tmdb_get('/discover/movie', {
         'language': 'ru-RU',
         'sort_by': 'vote_count.desc',
-        'vote_count.gte': 1000,
+        'vote_count.gte': 500,
         'with_genres': ','.join(str(x) for x in genre_ids),
         'page': page,
     })
@@ -68,11 +78,15 @@ def normalize(movie, genre_map):
 def build_batch(room, round_no):
     genre_map = room['genre_map']
     seen = room['seen_ids']
+
     if round_no == 1:
         source = fetch_top(1) + fetch_top(2)
     else:
-        gids = room['top_genre_ids'][:3] or []
+        gids = room['top_genre_ids'][:3]
         source = fetch_by_genres(gids, 1) + fetch_by_genres(gids, 2)
+        if len(source) < 3:
+            source += fetch_top(1)
+
     batch = []
     for m in source:
         if m['id'] in seen:
@@ -89,7 +103,7 @@ def build_batch(room, round_no):
 
 class Handler(SimpleHTTPRequestHandler):
     def _json(self, code, payload):
-        body = json.dumps(payload).encode('utf-8')
+        body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
         self.send_response(code)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
@@ -128,7 +142,6 @@ class Handler(SimpleHTTPRequestHandler):
                 if not host:
                     return self._json(400, {'error': 'Введите имя хоста'})
                 code = room_code()
-                genre_map = fetch_genres()
                 ROOMS[code] = {
                     'participants': [host],
                     'round': 0,
@@ -137,13 +150,13 @@ class Handler(SimpleHTTPRequestHandler):
                     'top_genres': [],
                     'top_genre_ids': [],
                     'winner': None,
-                    'genre_map': genre_map,
+                    'genre_map': fetch_genres(),
                     'seen_ids': set(),
                 }
                 return self._json(200, {'code': code, 'host': host})
 
             if '/join' in p:
-                code = p.split('/')[3]
+                code = p.split('/')[3].upper()
                 room = ROOMS.get(code)
                 if not room:
                     return self._json(404, {'error': 'Комната не найдена'})
@@ -152,10 +165,12 @@ class Handler(SimpleHTTPRequestHandler):
                     return self._json(400, {'error': 'Введите ник'})
                 if nick not in room['participants']:
                     room['participants'].append(nick)
+                    for mv in room['votes'].values():
+                        mv[nick] = None
                 return self._json(200, {'ok': True, 'participants': room['participants']})
 
             if '/start' in p:
-                code = p.split('/')[3]
+                code = p.split('/')[3].upper()
                 room = ROOMS.get(code)
                 if not room:
                     return self._json(404, {'error': 'Комната не найдена'})
@@ -166,7 +181,7 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json(200, {'ok': True})
 
             if '/vote' in p:
-                code = p.split('/')[3]
+                code = p.split('/')[3].upper()
                 room = ROOMS.get(code)
                 if not room:
                     return self._json(404, {'error': 'Комната не найдена'})
@@ -176,32 +191,37 @@ class Handler(SimpleHTTPRequestHandler):
                 val = data.get('vote')
                 if mid in room['votes'] and user in room['votes'][mid] and val in ('like', 'dislike'):
                     room['votes'][mid][user] = val
-                return self._json(200, {'ok': True})
+                    return self._json(200, {'ok': True})
+                return self._json(400, {'error': 'Некорректный голос'})
 
             if '/process' in p:
-                code = p.split('/')[3]
+                code = p.split('/')[3].upper()
                 room = ROOMS.get(code)
                 if not room:
                     return self._json(404, {'error': 'Комната не найдена'})
+
                 for m in room['movies']:
                     mv = room['votes'].get(str(m['id']), {})
                     if any(v is None for v in mv.values()):
                         return self._json(400, {'error': 'Не все проголосовали'})
+
                 for m in room['movies']:
                     mv = room['votes'][str(m['id'])]
                     if all(v == 'like' for v in mv.values()):
                         room['winner'] = m
                         return self._json(200, {'ok': True, 'winner': m})
+
                 if room['round'] == 1:
                     score = {}
                     for m in room['movies']:
                         mv = room['votes'][str(m['id'])]
-                        w = sum(1 if v == 'like' else -1 for v in mv.values())
+                        weight = sum(1 if v == 'like' else -1 for v in mv.values())
                         for gid in m['genre_ids']:
-                            score[gid] = score.get(gid, 0) + w
+                            score[gid] = score.get(gid, 0) + weight
                     top = sorted(score.items(), key=lambda x: x[1], reverse=True)[:3]
                     room['top_genre_ids'] = [x[0] for x in top]
                     room['top_genres'] = [room['genre_map'].get(x[0], str(x[0])) for x in top]
+
                 room['round'] += 1
                 room['movies'] = build_batch(room, room['round'])
                 room['votes'] = {str(m['id']): {u: None for u in room['participants']} for m in room['movies']}
