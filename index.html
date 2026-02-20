@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PartyMaker — выбор фильма для компании</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="container hero__content">
+        <div>
+          <p class="badge">🎬 PartyMaker</p>
+          <h1>Комнатный подбор фильма до полного согласия</h1>
+          <p class="subtitle">
+            Хост создаёт комнату на ПК, гости подключаются с телефона по QR,
+            голосуют лайками/дизлайками и получают общий финальный фильм.
+          </p>
+        </div>
+        <div class="hero__card">
+          <h3>Алгоритм</h3>
+          <ol>
+            <li>Раунд 1: показываем первые 3 фильма из топа.</li>
+            <li>Собираем лайки/дизлайки по всем участникам.</li>
+            <li>Считаем топ-3 жанра по реакции группы.</li>
+            <li>Даём следующие фильмы по этим жанрам до единогласного лайка.</li>
+          </ol>
+        </div>
+      </div>
+    </header>
+
+    <main class="container stack">
+      <section class="panel">
+        <h2>1. Комната</h2>
+        <div class="grid grid--3">
+          <label>
+            Имя хоста
+            <input id="hostName" type="text" placeholder="Злата" />
+          </label>
+          <button id="createRoomBtn" class="btn">Создать комнату</button>
+          <div id="roomInfo" class="hint"></div>
+        </div>
+
+        <div class="room-qr-wrap">
+          <div>
+            <h3>Подключение гостей с телефона</h3>
+            <p class="hint" id="joinHint">После создания комнаты появится QR. Гость сканирует его и открывает страницу подключения.</p>
+            <p class="hint" id="joinLinkText"></p>
+          </div>
+          <div id="roomQr" class="room-qr"></div>
+        </div>
+
+        <div class="join-row">
+          <label>
+            Имя гостя
+            <input id="guestName" type="text" placeholder="Артём" />
+          </label>
+          <button id="joinBtn" class="btn">Присоединиться</button>
+        </div>
+
+        <div>
+          <h3>Участники</h3>
+          <ul id="participants" class="participants"></ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>2. Голосование по фильмам</h2>
+        <p id="roundInfo" class="hint">Создайте комнату и добавьте участников, затем начните голосование.</p>
+        <button id="startVotingBtn" class="btn btn--primary">Начать голосование</button>
+        <div id="moviesBoard" class="cards"></div>
+        <button id="nextRoundBtn" class="btn hidden">Обработать раунд</button>
+      </section>
+
+      <section class="panel">
+        <h2>3. Финал и QR</h2>
+        <div id="finalResult" class="result-empty">Пока финальный фильм не выбран.</div>
+        <div id="qrResult" class="qr"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
