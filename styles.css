@@ -51,6 +51,12 @@ input {
   color: var(--text);
   border-radius: 10px;
   padding: .65rem .75rem;
+  transition: border-color .15s, outline-color .15s;
+  outline: 2px solid transparent;
+}
+input:focus {
+  outline-color: var(--accent);
+  border-color: var(--accent);
 }
 
 .btn {
@@ -61,9 +67,70 @@ input {
   color: white;
   font-weight: 600;
   cursor: pointer;
+  transition: filter .15s, transform .08s, opacity .15s;
 }
+.btn:hover:not(:disabled) { filter: brightness(1.18); }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
 .btn--primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #101224; }
+.btn--danger  { background: #5c2035; color: #f0a0b0; border: 1px solid #8d334d; }
+.btn--danger:hover:not(:disabled) { background: #7a2945; }
+.btn--small   { padding: .35rem .7rem; font-size: .85rem; }
+.btn--ready { background: linear-gradient(135deg, #2c7a4f, #42b56f); color: white; }
 .hidden { display: none; }
+
+/* ── Таб-переключатель хост/гость ── */
+.role-tabs {
+  display: flex;
+  gap: .4rem;
+  margin-bottom: .9rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: .6rem;
+}
+.tab {
+  border: 1px solid #3f4474;
+  border-radius: 8px;
+  padding: .45rem .9rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: .9rem;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.tab:hover { background: #2a3060; color: var(--text); }
+.tab--active { background: #2d356f; color: var(--text); border-color: var(--accent); }
+
+/* ── Форма гостя ── */
+.guest-join-grid {
+  display: grid;
+  gap: .7rem;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+}
+@media (max-width: 680px) { .guest-join-grid { grid-template-columns: 1fr; } }
+
+/* ── Секция «Поделиться» ── */
+.share-section {
+  margin-top: .9rem;
+  padding: .8rem;
+  border: 1px dashed #5963ad;
+  border-radius: 12px;
+  background: rgba(124, 92, 255, 0.06);
+}
+.share-section h3 { margin: 0 0 .4rem; font-size: 1rem; }
+.room-code-big {
+  font-size: 1.6rem;
+  letter-spacing: .15em;
+  color: var(--accent-2);
+}
+#shareQr img {
+  width: 160px;
+  height: 160px;
+  border-radius: 8px;
+  background: white;
+  padding: .3rem;
+  margin-top: .4rem;
+}
 
 .join-row {
   margin-top: .8rem;
@@ -71,6 +138,21 @@ input {
   gap: .7rem;
   flex-wrap: wrap;
   align-items: end;
+}
+
+.mode-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: .5rem;
+}
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: .95rem;
 }
 
 .participants {

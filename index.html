@@ -13,9 +13,8 @@
           <p class="badge">🎬 PartyMaker</p>
           <h1>Комнатный подбор фильма до полного согласия</h1>
           <p class="subtitle">
-            Хост создаёт комнату, гости присоединяются, получают фильмы из топа,
-            ставят лайки/дизлайки. После первого раунда алгоритм считает 3 самых
-            популярных жанра и предлагает новые фильмы, пока все не лайкнут один и тот же фильм.
+            Хост создаёт комнату, гости присоединяются со своих телефонов,
+            каждый голосует у себя на экране. Алгоритм находит фильм с единогласным лайком.
           </p>
         </div>
         <div class="hero__card">
@@ -31,24 +30,64 @@
     </header>
 
     <main class="container stack">
-      <section class="panel">
+
+      <!-- ── СЕКЦИЯ 1: КОМНАТА ── -->
+      <section class="panel" id="section-room">
         <h2>1. Комната</h2>
-        <div class="grid grid--3">
-          <label>
-            Имя хоста
-            <input id="hostName" type="text" placeholder="Злата" />
-          </label>
-          <button id="createRoomBtn" class="btn">Создать комнату</button>
-          <div id="roomInfo" class="hint"></div>
+
+        <!-- Таб-переключатель: хост / гость -->
+        <div class="role-tabs">
+          <button id="tabHost"  class="tab tab--active">Создать комнату</button>
+          <button id="tabGuest" class="tab">Войти в комнату</button>
         </div>
 
-        <div class="join-row">
-          <label>
-            Имя гостя
-            <input id="guestName" type="text" placeholder="Артём" />
-          </label>
-          <button id="joinBtn" class="btn">Присоединиться</button>
+        <!-- Форма хоста -->
+        <div id="hostForm">
+          <div class="grid grid--3">
+            <label>
+              Имя хоста
+              <input id="hostName" type="text" placeholder="Злата" autocomplete="off" />
+            </label>
+            <button id="createRoomBtn" class="btn">Создать комнату</button>
+            <div id="roomInfo" class="hint"></div>
+          </div>
+
+          <div class="join-row">
+            <label>
+              Добавить гостя вручную
+              <input id="guestName" type="text" placeholder="Артём" autocomplete="off" />
+            </label>
+            <button id="joinBtn" class="btn">Присоединиться</button>
+          </div>
         </div>
+
+        <!-- Форма гостя -->
+        <div id="guestForm" class="hidden">
+          <div class="guest-join-grid">
+            <label>
+              Код комнаты
+              <input id="joinRoomCode" type="text" placeholder="A3F9KZ"
+                autocomplete="off" style="text-transform:uppercase" />
+            </label>
+            <label>
+              Ваше имя
+              <input id="joinGuestName" type="text" placeholder="Артём" autocomplete="off" />
+            </label>
+            <button id="guestJoinBtn" class="btn btn--primary">Войти →</button>
+          </div>
+          <p id="guestJoinInfo" class="hint"></p>
+        </div>
+
+        <!-- Блок «поделиться» — показывается после создания комнаты -->
+        <div id="shareSection" class="share-section hidden">
+          <h3>Пригласить в комнату</h3>
+          <p>Код: <strong id="shareRoomCode" class="room-code-big"></strong></p>
+          <p class="hint">Гости вводят код вручную или сканируют QR (нужен Firebase):</p>
+          <div id="shareQr"></div>
+        </div>
+
+        <!-- Статус гостя после входа -->
+        <p id="guestWelcome" class="hint hidden"></p>
 
         <div>
           <h3>Участники</h3>
@@ -56,21 +95,37 @@
         </div>
       </section>
 
+      <!-- ── СЕКЦИЯ 2: ГОЛОСОВАНИЕ ── -->
       <section class="panel">
         <h2>2. Голосование по фильмам</h2>
         <p id="roundInfo" class="hint">Создайте комнату и добавьте участников, затем начните голосование.</p>
+
+        <div class="mode-row">
+          <label class="toggle-label">
+            <input type="checkbox" id="memoryModeToggle" />
+            Вечер воспоминаний
+          </label>
+          <span id="winnersCount" class="hint"></span>
+          <button id="clearWinnersBtn" class="btn btn--danger btn--small hidden">Очистить архив</button>
+        </div>
+
         <button id="startVotingBtn" class="btn btn--primary">Начать голосование</button>
         <div id="moviesBoard" class="cards"></div>
         <button id="nextRoundBtn" class="btn hidden">Обработать раунд</button>
       </section>
 
+      <!-- ── СЕКЦИЯ 3: ФИНАЛ ── -->
       <section class="panel">
         <h2>3. Финал и QR</h2>
         <div id="finalResult" class="result-empty">Пока финальный фильм не выбран.</div>
         <div id="qrResult" class="qr"></div>
       </section>
+
     </main>
 
+    <!-- Firebase SDK (загружается только если FIREBASE_CONFIG заполнен) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

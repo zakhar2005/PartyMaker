@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /c/Users/zakha/source/repos/PartyMaker log --oneline -10)",
+      "WebSearch",
+      "WebFetch(domain:firebase.google.com)",
+      "Bash(python3 -c \"import docx; print\\(''ok''\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python3 -m pip install python-docx -q)",
+      "Bash(python3 make_doc.py)"
+    ]
+  }
+}
